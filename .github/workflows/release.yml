@@ -1,0 +1,129 @@
+name: Release
+
+on:
+  push:
+    tags: ['[0-9]*']
+    branches: ['language/**']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0       # needed to resolve language/* branches on tag pushes
+
+      - name: Resolve version and trigger type
+        id: ctx
+        run: |
+          ref="${GITHUB_REF_NAME}"
+          if [[ "$ref" == language/* ]]; then
+            echo "tag=${ref#language/}" >> "$GITHUB_OUTPUT"
+            echo "is_lang_branch=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${ref}"           >> "$GITHUB_OUTPUT"
+            echo "is_lang_branch=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install gettext
+        run: sudo apt-get install -y gettext
+
+      # ── Plugin zip (tag pushes only) ────────────────────────────────────────
+
+      - name: Build plugin zip
+        if: steps.ctx.outputs.is_lang_branch == 'false'
+        run: |
+          mkdir -p /tmp/build
+
+          tag="${{ steps.ctx.outputs.tag }}"
+
+          git archive HEAD --prefix=axellcore/ | tar xf - -C /tmp/build/
+
+          git -C lib/selfdirectory archive HEAD \
+            --prefix=axellcore/lib/selfdirectory/ \
+            -- class-selfdirectory.php \
+            | tar xf - -C /tmp/build/
+
+          cd /tmp/build && zip -r "axellcore.${tag}.zip" axellcore
+
+      # ── Language packs ───────────────────────────────────────────────────────
+      # Language files (*.po) live at the root of language/<version> branches.
+      # On a language/* branch push: use the checked-out working tree directly.
+      # On a tag push: try to find the matching language/<tag> branch.
+
+      - name: Resolve language source directory
+        id: lang_src
+        run: |
+          tag="${{ steps.ctx.outputs.tag }}"
+          is_lang="${{ steps.ctx.outputs.is_lang_branch }}"
+
+          if [[ "$is_lang" == "true" ]]; then
+            # Already on the orphan language branch — workspace root has the .po files.
+            echo "dir=." >> "$GITHUB_OUTPUT"
+          else
+            branch="language/${tag}"
+            # Orphan branches are fully disconnected from main history,
+            # so we use a sparse checkout into an isolated directory.
+            if git ls-remote --exit-code origin "refs/heads/${branch}" > /dev/null 2>&1; then
+              mkdir /tmp/lang-src
+              cd /tmp/lang-src
+              git init
+              git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+              git fetch --depth=1 origin "refs/heads/${branch}"
+              git checkout FETCH_HEAD
+              cd -
+              echo "dir=/tmp/lang-src" >> "$GITHUB_OUTPUT"
+            else
+              echo "dir=" >> "$GITHUB_OUTPUT"   # no language branch yet — skip
+            fi
+          fi
+
+      - name: Build language packs
+        if: steps.lang_src.outputs.dir != ''
+        run: |
+          mkdir -p /tmp/langs
+          tag="${{ steps.ctx.outputs.tag }}"
+          for po in "${{ steps.lang_src.outputs.dir }}"/axellcore-*.po; do
+            [ -f "$po" ] || continue
+            locale=$(basename "$po" .po | sed 's/^axellcore-//')
+            # WordPress expects axellcore-{locale}.mo/.po inside the zip.
+            msgfmt "$po" -o "/tmp/langs/axellcore-${locale}.mo"
+            cp "$po" "/tmp/langs/axellcore-${locale}.po"
+          done
+
+      - name: Package language zips and collect asset paths
+        id: files
+        run: |
+          files=""
+          tag="${{ steps.ctx.outputs.tag }}"
+
+          plugin_zip="/tmp/build/axellcore.${tag}.zip"
+          [ -f "$plugin_zip" ] && files="$plugin_zip"
+
+          for po in /tmp/langs/axellcore-*.po; do
+            [ -f "$po" ] || continue
+            locale=$(basename "$po" .po | sed 's/^axellcore-//')
+            # Zip name includes version for asset identification;
+            # files inside keep the standard WordPress name (no version).
+            (cd /tmp/langs && zip "axellcore.${tag}-${locale}.zip" \
+              "axellcore-${locale}.po" \
+              "axellcore-${locale}.mo")
+            files="${files:+$files,}/tmp/langs/axellcore.${tag}-${locale}.zip"
+          done
+
+          echo "paths=$files" >> "$GITHUB_OUTPUT"
+          [ -n "$files" ] \
+            && echo "has_files=true"  >> "$GITHUB_OUTPUT" \
+            || echo "has_files=false" >> "$GITHUB_OUTPUT"
+
+      - name: Upload assets to release
+        if: steps.files.outputs.has_files == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ctx.outputs.tag }}
+          files: ${{ steps.files.outputs.paths }}
+          generate_release_notes: ${{ steps.ctx.outputs.is_lang_branch == 'false' }}

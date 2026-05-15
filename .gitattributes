@@ -1,0 +1,24 @@
+# Normalise line endings.
+* text=auto
+
+# Dev-only files — excluded from `git archive` (used by release and playground builds).
+.github/              export-ignore
+tests/                export-ignore
+vendor/               export-ignore
+node_modules/         export-ignore
+.gitignore            export-ignore
+.gitattributes        export-ignore
+.gitmodules           export-ignore
+.phpcs.xml.dist       export-ignore
+phpunit.xml           export-ignore
+phpstan.neon          export-ignore
+phpstan-bootstrap.php export-ignore
+playwright.config.ts  export-ignore
+package.json          export-ignore
+package-lock.json     export-ignore
+composer.json         export-ignore
+composer.lock         export-ignore
+blueprint-dev.json    export-ignore
+Gruntfile.js          export-ignore
+README.md             export-ignore
+languages/            export-ignore

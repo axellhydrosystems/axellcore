@@ -1,0 +1,19 @@
+{
+  "name": "axellcore",
+  "description": "Core functionality for Axell Hydrosystems.",
+  "license": "GPL-2.0-or-later",
+  "private": true,
+  "scripts": {
+    "readme": "grunt readme",
+    "playground": "wp-playground-cli server --mount=.:/wordpress/wp-content/plugins/axellcore --login",
+    "test:e2e": "playwright test",
+    "test:visual": "playwright test tests/e2e/visual.spec.ts",
+    "test:update-snapshots": "playwright test --update-snapshots tests/e2e/visual.spec.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "@wp-playground/cli": "^3.1.33",
+    "grunt": "^1.6.2",
+    "grunt-wp-readme-to-markdown": "^2.1.0"
+  }
+}
