@@ -71,25 +71,21 @@ jobs:
           tag="${{ steps.ctx.outputs.tag }}"
           is_lang="${{ steps.ctx.outputs.is_lang_branch }}"
 
-          if [[ "$is_lang" == "true" ]]; then
-            # Already on the orphan language branch — workspace root has the .po files.
-            echo "dir=." >> "$GITHUB_OUTPUT"
+          branch="language/${tag}"
+          # Always sparse-checkout the orphan language branch into an isolated
+          # directory. This works for tag pushes, language/* branch pushes, and
+          # workflow_dispatch — in all cases the checked-out workspace is main.
+          if git ls-remote --exit-code origin "refs/heads/${branch}" > /dev/null 2>&1; then
+            mkdir /tmp/lang-src
+            cd /tmp/lang-src
+            git init
+            git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+            git fetch --depth=1 origin "refs/heads/${branch}"
+            git checkout FETCH_HEAD
+            cd -
+            echo "dir=/tmp/lang-src" >> "$GITHUB_OUTPUT"
           else
-            branch="language/${tag}"
-            # Orphan branches are fully disconnected from main history,
-            # so we use a sparse checkout into an isolated directory.
-            if git ls-remote --exit-code origin "refs/heads/${branch}" > /dev/null 2>&1; then
-              mkdir /tmp/lang-src
-              cd /tmp/lang-src
-              git init
-              git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
-              git fetch --depth=1 origin "refs/heads/${branch}"
-              git checkout FETCH_HEAD
-              cd -
-              echo "dir=/tmp/lang-src" >> "$GITHUB_OUTPUT"
-            else
-              echo "dir=" >> "$GITHUB_OUTPUT"   # no language branch yet — skip
-            fi
+            echo "dir=" >> "$GITHUB_OUTPUT"   # no language branch yet — skip
           fi
 
       - name: Build language packs
