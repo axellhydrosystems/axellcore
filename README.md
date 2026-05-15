@@ -4,7 +4,7 @@
 **Requires at least:** 6.4  
 **Tested up to:** 6.8  
 **Requires PHP:** 8.1  
-**Stable tag:** 0.2.0  
+**Stable tag:** 0.2.1  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -15,6 +15,9 @@ Core functionality for Axell Hydrosystems.
 Core functionality for Axell Hydrosystems WordPress sites.
 
 ## Changelog ##
+
+### 0.2.1 ###
+* Fix TypeError when $mimes is null in wp_check_filetype_and_ext filter.
 
 ### 0.2.0 ###
 * Add MIME type support for SketchUp (.skp), AutoCAD (.dwg) and Autodesk Revit (.rfa) uploads.

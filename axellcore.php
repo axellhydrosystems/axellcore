@@ -4,7 +4,7 @@
  *
  * @package           Axellcore
  * Description:       Core functionality for Axell Hydrosystems.
- * Version:           0.2.0
+ * Version:           0.2.1
  * Requires at least: 6.4
  * Requires PHP:      8.1
  * Tested up to:      6.8
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AXELLCORE_VERSION', '0.2.0' );
+define( 'AXELLCORE_VERSION', '0.2.1' );
 define( 'AXELLCORE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'AXELLCORE_URL', plugin_dir_url( __FILE__ ) );
 
@@ -76,7 +76,7 @@ add_filter(
  */
 add_filter(
 	'wp_check_filetype_and_ext',
-	function ( array $data, string $file, string $filename, array $mimes, $real_mime ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	function ( array $data, string $file, string $filename, ?array $mimes, $real_mime ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		if ( ! empty( $data['ext'] ) ) {
 			return $data;
 		}
