@@ -4,6 +4,11 @@ on:
   push:
     tags: ['[0-9]*']
     branches: ['language/**']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build language packs for (e.g. 0.2.0)'
+        required: true
 
 permissions:
   contents: write
@@ -20,13 +25,18 @@ jobs:
       - name: Resolve version and trigger type
         id: ctx
         run: |
-          ref="${GITHUB_REF_NAME}"
-          if [[ "$ref" == language/* ]]; then
-            echo "tag=${ref#language/}" >> "$GITHUB_OUTPUT"
-            echo "is_lang_branch=true"  >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "tag=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "is_lang_branch=true"                    >> "$GITHUB_OUTPUT"
           else
-            echo "tag=${ref}"           >> "$GITHUB_OUTPUT"
-            echo "is_lang_branch=false" >> "$GITHUB_OUTPUT"
+            ref="${GITHUB_REF_NAME}"
+            if [[ "$ref" == language/* ]]; then
+              echo "tag=${ref#language/}" >> "$GITHUB_OUTPUT"
+              echo "is_lang_branch=true"  >> "$GITHUB_OUTPUT"
+            else
+              echo "tag=${ref}"           >> "$GITHUB_OUTPUT"
+              echo "is_lang_branch=false" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
       - name: Install gettext
