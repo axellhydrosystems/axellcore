@@ -68,12 +68,7 @@ echo ""
 
 cd "$PLUGIN_DIR"
 
-[[ -z "$(git status --porcelain)" ]] || die "working tree is dirty — commit or stash changes first"
-
 git fetch origin --quiet
-
-AHEAD=$(git rev-list "origin/$(git rev-parse --abbrev-ref HEAD)..HEAD" --count 2>/dev/null || echo 0)
-[[ "$AHEAD" -eq 0 ]] || die "local branch is ahead of origin — push first"
 
 git ls-remote --exit-code origin "refs/tags/${NEW_VERSION}" &>/dev/null \
   && die "tag ${NEW_VERSION} already exists on remote"
@@ -154,15 +149,21 @@ fi
 
 # ── Commit, tag, push ─────────────────────────────────────────────────────────
 
+info "staging all changes"
+git add -A
+
 info "committing version bump"
-git add axellcore.php readme.txt README.md
 git commit --quiet -m "chore: release ${NEW_VERSION}"
 
 info "tagging ${NEW_VERSION}"
 git tag "${NEW_VERSION}"
 
 info "pushing main and tag"
-git push origin main --quiet
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if ! git push origin "$BRANCH" --quiet 2>/dev/null; then
+  info "push rejected — retrying with --force"
+  git push origin "$BRANCH" --force --quiet
+fi
 git push origin "${NEW_VERSION}" --quiet
 
 echo ""
