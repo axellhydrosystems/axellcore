@@ -35,8 +35,11 @@ info() { echo "  → $*"; }
 require_cmd() { command -v "$1" &>/dev/null || die "$1 is required"; }
 require_cmd git
 require_cmd msgfmt
+require_cmd msgmerge
+require_cmd msgunfmt
 require_cmd zip
 require_cmd node   # for grunt
+require_cmd wp     # for make-pot
 
 # ── Parse version argument ───────────────────────────────────────────────────
 
@@ -94,6 +97,77 @@ fi
 
 info "regenerating README.md via grunt"
 npm run readme --silent 2>/dev/null
+
+# ── Update POT and PO files ──────────────────────────────────────────────────
+
+POT_FILE="$PLUGIN_DIR/languages/axellcore.pot"
+
+info "generating axellcore.pot via wp i18n make-pot"
+wp i18n make-pot "$PLUGIN_DIR" "$POT_FILE" \
+  --domain=axellcore \
+  --exclude=lib,vendor,node_modules,tests \
+  --quiet
+
+if [[ -d "$LANG_SRC" ]]; then
+  MISSING_ALL=""
+
+  for PO in "$LANG_SRC"/axellcore-*.po; do
+    [[ -f "$PO" ]] || continue
+    LOCALE=$(basename "$PO" .po | sed 's/^axellcore-//')
+
+    info "merging $POT_FILE into $PO ($LOCALE)"
+    msgmerge --update --backup=none --quiet "$PO" "$POT_FILE"
+
+    # Check for untranslated non-header strings.
+    # Skips: file header (empty msgid), plugin metadata comments
+    # (Plugin Name, Description, Author, Author URI).
+    # A fuzzy or empty msgstr on any remaining string aborts the release.
+    MISSING=$(python3 - "$PO" <<'PYEOF'
+import sys, re
+
+SKIP_COMMENTS = {
+    "Plugin Name of the plugin",
+    "Description of the plugin",
+    "Author of the plugin",
+    "Author URI of the plugin",
+    "Plugin URI of the plugin",
+}
+
+path = sys.argv[1]
+blocks = open(path).read().strip().split("\n\n")
+missing = []
+for block in blocks:
+    lines = block.strip().splitlines()
+    # Skip file header (empty msgid)
+    if any(l == 'msgid ""' for l in lines):
+        continue
+    # Skip plugin metadata strings (extracted-comments)
+    comments = [l.lstrip('#. ').strip() for l in lines if l.startswith('#.')]
+    if any(c in SKIP_COMMENTS for c in comments):
+        continue
+    is_fuzzy   = any(l.strip() == '#, fuzzy' for l in lines)
+    msgid_val  = ' '.join(re.findall(r'^msgid\s+"(.*)"', '\n'.join(lines), re.M))
+    msgstr_val = ' '.join(re.findall(r'^msgstr\s+"(.*)"', '\n'.join(lines), re.M))
+    if msgid_val and (is_fuzzy or not msgstr_val.strip()):
+        missing.append(msgid_val)
+for m in missing:
+    print(m)
+PYEOF
+)
+
+    if [[ -n "$MISSING" ]]; then
+      MISSING_ALL+="\n[$LOCALE]\n$MISSING"
+    fi
+  done
+
+  if [[ -n "$MISSING_ALL" ]]; then
+    echo ""
+    echo "error: untranslated strings found — translate before releasing:" >&2
+    echo -e "$MISSING_ALL" >&2
+    echo "" >&2
+    exit 1
+  fi
+fi
 
 # ── Build language branch ─────────────────────────────────────────────────────
 
