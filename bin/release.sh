@@ -185,8 +185,14 @@ if [[ -d "$LANG_SRC" ]]; then
     for PO in "${PO_FILES[@]}"; do
       [[ -f "$PO" ]] || continue
       LOCALE=$(basename "$PO" .po | sed 's/^axellcore-//')
-      cp "$PO" "$LANG_WORK/axellcore-${LOCALE}.po"
-      msgfmt "$PO" -o "$LANG_WORK/axellcore-${LOCALE}.mo"
+      DEST_PO="$LANG_WORK/axellcore-${LOCALE}.po"
+      cp "$PO" "$DEST_PO"
+      # Update Project-Id-Version to match the release version.
+      sed -i '' "s/^\"Project-Id-Version:.*\$/\"Project-Id-Version: axellcore ${NEW_VERSION}\\\\n\"/" "$DEST_PO"
+      # Update PO-Revision-Date to today.
+      TODAY_ISO=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
+      sed -i '' "s/^\"PO-Revision-Date:.*\$/\"PO-Revision-Date: ${TODAY_ISO}\\\\n\"/" "$DEST_PO"
+      msgfmt "$DEST_PO" -o "$LANG_WORK/axellcore-${LOCALE}.mo"
       info "compiled $LOCALE"
     done
 
