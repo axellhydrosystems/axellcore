@@ -4,7 +4,7 @@
  *
  * @package           Axellcore
  * Description:       Core functionality for Axell Hydrosystems.
- * Version:           0.2.2
+ * Version:           0.2.3
  * Requires at least: 6.4
  * Requires PHP:      8.1
  * Tested up to:      6.8
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AXELLCORE_VERSION', '0.2.2' );
+define( 'AXELLCORE_VERSION', '0.2.3' );
 define( 'AXELLCORE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'AXELLCORE_URL', plugin_dir_url( __FILE__ ) );
 
