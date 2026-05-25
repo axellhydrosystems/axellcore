@@ -18,6 +18,7 @@ package.json          export-ignore
 package-lock.json     export-ignore
 composer.json         export-ignore
 composer.lock         export-ignore
+bin/                  export-ignore
 blueprint-dev.json    export-ignore
 Gruntfile.js          export-ignore
 README.md             export-ignore
