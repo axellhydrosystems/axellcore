@@ -4,7 +4,7 @@ Tags: axell, hydrosystems, core
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.2.8
+Stable tag: 0.2.9
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,10 @@ Core functionality for Axell Hydrosystems.
 Core functionality for Axell Hydrosystems WordPress sites.
 
 == Changelog ==
+
+= 0.2.9 =
+* Add db update system for data migrations on plugin update.
+* Fix .rfa attachments uploaded with MIME type application/octet-stream — migrate to application/x-ole-storage.
 
 = 0.2.8 =
 * Make selfdirectory optional — plugin activates without submodule; production deploys still include it.

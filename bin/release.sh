@@ -220,6 +220,24 @@ if ! grep -q "^= ${NEW_VERSION} =" "$README_TXT"; then
 	sed -i '' "s/^== Changelog ==$/== Changelog ==\n\n= ${NEW_VERSION} =\n* Release ${NEW_VERSION} (${TODAY})./" "$README_TXT"
 fi
 
+# ── Validate changelog entry ─────────────────────────────────────────────────
+
+# Extract the bullet lines for this version (lines between "= X.Y.Z =" and the
+# next heading or end-of-file) and check that at least one meaningful entry exists.
+CHANGELOG_ENTRY=$(
+	awk "/^= ${NEW_VERSION} =/{found=1; next} found && /^= /{exit} found{print}" "$README_TXT" \
+		| grep -v '^[[:space:]]*$'
+)
+
+if [[ -z "$CHANGELOG_ENTRY" ]]; then
+	die "Changelog for ${NEW_VERSION} is empty. Add release notes to readme.txt before releasing."
+fi
+
+PLACEHOLDER="* Release ${NEW_VERSION}"
+if [[ "$CHANGELOG_ENTRY" == "${PLACEHOLDER}"* && $(echo "$CHANGELOG_ENTRY" | wc -l | tr -d ' ') -eq 1 ]]; then
+	die "No changes added in current changelog for ${NEW_VERSION}.\n       Edit readme.txt and replace the placeholder before releasing."
+fi
+
 # ── Regenerate README.md ─────────────────────────────────────────────────────
 
 info "regenerating README.md via grunt"
