@@ -163,7 +163,20 @@ PYEOF
 	LANG_SHA=$(git -C "$LANG_REPO" rev-parse HEAD)
 	echo ""
 	echo "Language branch $LANG_BRANCH pushed ($LANG_SHA)."
-	echo "CI will compile .mo and upload to the GitHub Release."
+
+	# Dispatch the Language workflow directly — branch push from an isolated
+	# repo does not reliably trigger GitHub Actions, so we trigger explicitly.
+	if command -v gh &>/dev/null; then
+		info "dispatching Language workflow for ${CURRENT}"
+		gh workflow run language.yml \
+			--repo "$(git -C "$PLUGIN_DIR" remote get-url origin | sed 's/.*github\.com[:\/]//' | sed 's/\.git$//')" \
+			--field version="${CURRENT}"
+		echo "Language workflow dispatched."
+		REPO=$(git -C "$PLUGIN_DIR" remote get-url origin | sed 's/.*github\.com[:\/]//' | sed 's/\.git$//')
+		echo "https://github.com/${REPO}/actions/workflows/language.yml"
+	else
+		echo "warning: gh CLI not found — trigger the Language workflow manually with version=${CURRENT}" >&2
+	fi
 	exit 0
 fi
 
