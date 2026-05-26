@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
-# bin/release.sh — bump version, build language branch, tag and push release.
+# bin/release.sh — bump version or publish language branch.
 #
 # Usage:
-#   bin/release.sh patch            # 0.2.1 → 0.2.2
+#   bin/release.sh patch            # 0.2.1 → 0.2.2  bump + pot + commit + tag + push
 #   bin/release.sh minor            # 0.2.1 → 0.3.0
 #   bin/release.sh major            # 0.2.1 → 1.0.0
 #   bin/release.sh 1.2.3            # explicit version
 #
-# Language pack source (optional):
-#   LANG_SRC=/path/to/languages/plugins   bin/release.sh patch
+#   bin/release.sh language         # build language/<current-version> branch from LANG_SRC
+#                                   # run this after translating, independently of the release
+#
+# Language pack source (language subcommand):
+#   LANG_SRC=/path/to/languages/plugins   bin/release.sh language
 #
 # Defaults to wp-content/languages/plugins/ two levels up from the plugin dir
 # (i.e. the Studio site that hosts the development copy of the plugin).
@@ -21,9 +24,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PLUGIN_FILE="$PLUGIN_DIR/axellcore.php"
 README_TXT="$PLUGIN_DIR/readme.txt"
+POT_FILE="$PLUGIN_DIR/languages/axellcore.pot"
 
-# Default language source: ../../languages/plugins relative to plugin root
-# e.g. ~/Studio/axell/wp-content/languages/plugins
 DEFAULT_LANG_SRC="$(cd "$PLUGIN_DIR/../../languages/plugins" 2>/dev/null && pwd || true)"
 LANG_SRC="${LANG_SRC:-$DEFAULT_LANG_SRC}"
 
@@ -33,96 +35,58 @@ die()  { echo "error: $*" >&2; exit 1; }
 info() { echo "  → $*"; }
 
 require_cmd() { command -v "$1" &>/dev/null || die "$1 is required"; }
-require_cmd git
-require_cmd msgfmt
-require_cmd msgmerge
-require_cmd msgunfmt
-require_cmd zip
-require_cmd node   # for grunt
-require_cmd wp     # for make-pot
 
-# ── Parse version argument ───────────────────────────────────────────────────
+current_version() {
+	grep -m1 "Version:" "$PLUGIN_FILE" \
+		| sed 's/.*Version:[[:space:]]*//' \
+		| tr -d '[:space:]'
+}
 
-[[ $# -ge 1 ]] || die "usage: bin/release.sh patch|minor|major|<version>"
+# ── Dispatch ─────────────────────────────────────────────────────────────────
 
-BUMP="$1"
+[[ $# -ge 1 ]] || die "usage: bin/release.sh patch|minor|major|<version>|language"
 
-CURRENT=$(grep -m1 "Version:" "$PLUGIN_FILE" | sed 's/.*Version:[[:space:]]*//' | tr -d '[:space:]')
-[[ "$CURRENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "could not parse current version from plugin header: $CURRENT"
+CMD="$1"
 
-IFS='.' read -r MAJ MIN PAT <<< "$CURRENT"
+# ─────────────────────────────────────────────────────────────────────────────
+# SUBCOMMAND: language
+# Build an orphan language/<version> branch from LANG_SRC and push it.
+# The CI workflow compiles .po → .mo and uploads the zip to the GitHub Release.
+# ─────────────────────────────────────────────────────────────────────────────
+if [[ "$CMD" == "language" ]]; then
+	require_cmd git
+	require_cmd msgfmt
+	require_cmd msgmerge
 
-case "$BUMP" in
-  major)   NEW_VERSION="$((MAJ+1)).0.0" ;;
-  minor)   NEW_VERSION="${MAJ}.$((MIN+1)).0" ;;
-  patch)   NEW_VERSION="${MAJ}.${MIN}.$((PAT+1))" ;;
-  [0-9]*.[0-9]*.[0-9]*)
-           NEW_VERSION="$BUMP"
-           [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "invalid explicit version: $NEW_VERSION"
-           ;;
-  *)       die "first argument must be patch, minor, major, or explicit semver (got: $BUMP)" ;;
-esac
+	CURRENT=$(current_version)
+	[[ "$CURRENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+		|| die "could not parse current version: $CURRENT"
 
-echo ""
-echo "axellcore $CURRENT → $NEW_VERSION"
-echo ""
+	LANG_BRANCH="language/${CURRENT}"
 
-# ── Sanity checks ────────────────────────────────────────────────────────────
+	echo ""
+	echo "Building language branch $LANG_BRANCH"
+	echo ""
 
-cd "$PLUGIN_DIR"
+	[[ -d "$LANG_SRC" ]] \
+		|| die "LANG_SRC not found: $LANG_SRC — set LANG_SRC= to override"
 
-git fetch origin --quiet
+	PO_FILES=( "$LANG_SRC"/axellcore-*.po )
+	[[ -f "${PO_FILES[0]}" ]] \
+		|| die "no axellcore-*.po files found in $LANG_SRC"
 
-git ls-remote --exit-code origin "refs/tags/${NEW_VERSION}" &>/dev/null \
-  && die "tag ${NEW_VERSION} already exists on remote"
+	# ── Merge POT into each PO and validate ──────────────────────────────────
 
-# ── Bump version in source files ─────────────────────────────────────────────
+	MISSING_ALL=""
 
-info "bumping version in axellcore.php and readme.txt"
+	for PO in "${PO_FILES[@]}"; do
+		[[ -f "$PO" ]] || continue
+		LOCALE=$(basename "$PO" .po | sed 's/^axellcore-//')
 
-# Plugin header
-sed -i '' "s/ \* Version:.*/ * Version:           ${NEW_VERSION}/" "$PLUGIN_FILE"
-# AXELLCORE_VERSION constant
-sed -i '' "s/define( 'AXELLCORE_VERSION', '[^']*' )/define( 'AXELLCORE_VERSION', '${NEW_VERSION}' )/" "$PLUGIN_FILE"
-# readme.txt stable tag
-sed -i '' "s/^Stable tag:.*/Stable tag: ${NEW_VERSION}/" "$README_TXT"
+		info "merging pot into $LOCALE"
+		msgmerge --update --backup=none --quiet "$PO" "$POT_FILE"
 
-# Prepend changelog entry (only if not already present)
-if ! grep -q "^= ${NEW_VERSION} =" "$README_TXT"; then
-  TODAY=$(date -u +%Y-%m-%d)
-  sed -i '' "s/^== Changelog ==$/== Changelog ==\n\n= ${NEW_VERSION} =\n* Release ${NEW_VERSION} (${TODAY})./" "$README_TXT"
-fi
-
-# ── Regenerate README.md ──────────────────────────────────────────────────────
-
-info "regenerating README.md via grunt"
-npm run readme --silent 2>/dev/null
-
-# ── Update POT and PO files ──────────────────────────────────────────────────
-
-POT_FILE="$PLUGIN_DIR/languages/axellcore.pot"
-
-info "generating axellcore.pot via wp i18n make-pot"
-wp i18n make-pot "$PLUGIN_DIR" "$POT_FILE" \
-  --domain=axellcore \
-  --exclude=lib,vendor,node_modules,tests \
-  --quiet
-
-if [[ -d "$LANG_SRC" ]]; then
-  MISSING_ALL=""
-
-  for PO in "$LANG_SRC"/axellcore-*.po; do
-    [[ -f "$PO" ]] || continue
-    LOCALE=$(basename "$PO" .po | sed 's/^axellcore-//')
-
-    info "merging $POT_FILE into $PO ($LOCALE)"
-    msgmerge --update --backup=none --quiet "$PO" "$POT_FILE"
-
-    # Check for untranslated non-header strings.
-    # Skips: file header (empty msgid), plugin metadata comments
-    # (Plugin Name, Description, Author, Author URI).
-    # A fuzzy or empty msgstr on any remaining string aborts the release.
-    MISSING=$(python3 - "$PO" <<'PYEOF'
+		MISSING=$(python3 - "$PO" <<'PYEOF'
 import sys, re
 
 SKIP_COMMENTS = {
@@ -138,10 +102,8 @@ blocks = open(path).read().strip().split("\n\n")
 missing = []
 for block in blocks:
     lines = block.strip().splitlines()
-    # Skip file header (empty msgid)
     if any(l == 'msgid ""' for l in lines):
         continue
-    # Skip plugin metadata strings (extracted-comments)
     comments = [l.lstrip('#. ').strip() for l in lines if l.startswith('#.')]
     if any(c in SKIP_COMMENTS for c in comments):
         continue
@@ -154,80 +116,124 @@ for m in missing:
     print(m)
 PYEOF
 )
+		[[ -n "$MISSING" ]] && MISSING_ALL+="\n[$LOCALE]\n$MISSING"
+	done
 
-    if [[ -n "$MISSING" ]]; then
-      MISSING_ALL+="\n[$LOCALE]\n$MISSING"
-    fi
-  done
+	if [[ -n "$MISSING_ALL" ]]; then
+		echo "" >&2
+		echo "error: untranslated strings — translate before publishing:" >&2
+		echo -e "$MISSING_ALL" >&2
+		echo "" >&2
+		exit 1
+	fi
 
-  if [[ -n "$MISSING_ALL" ]]; then
-    echo ""
-    echo "error: untranslated strings found — translate before releasing:" >&2
-    echo -e "$MISSING_ALL" >&2
-    echo "" >&2
-    exit 1
-  fi
+	# ── Build orphan branch ───────────────────────────────────────────────────
+
+	LANG_WORK=$(mktemp -d)
+	LANG_REPO=$(mktemp -d)
+	trap 'rm -rf "$LANG_WORK" "$LANG_REPO"' EXIT
+
+	for PO in "${PO_FILES[@]}"; do
+		[[ -f "$PO" ]] || continue
+		LOCALE=$(basename "$PO" .po | sed 's/^axellcore-//')
+		DEST_PO="$LANG_WORK/axellcore-${LOCALE}.po"
+		cp "$PO" "$DEST_PO"
+		sed -i '' "s/^\"Project-Id-Version:.*\$/\"Project-Id-Version: axellcore ${CURRENT}\\\\n\"/" "$DEST_PO"
+		TODAY_ISO=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
+		sed -i '' "s/^\"PO-Revision-Date:.*\$/\"PO-Revision-Date: ${TODAY_ISO}\\\\n\"/" "$DEST_PO"
+		info "prepared $LOCALE"
+	done
+
+	git -C "$LANG_REPO" init --quiet
+	git -C "$LANG_REPO" remote add origin "$(git -C "$PLUGIN_DIR" remote get-url origin)"
+	git -C "$LANG_REPO" checkout --orphan "$LANG_BRANCH" --quiet
+	git -C "$LANG_REPO" rm -rf . --quiet 2>/dev/null || true
+
+	cp "$LANG_WORK"/axellcore-*.po "$LANG_REPO/"
+
+	git -C "$LANG_REPO" add .
+	git -C "$LANG_REPO" \
+		-c user.name="$(git -C "$PLUGIN_DIR" config user.name)" \
+		-c user.email="$(git -C "$PLUGIN_DIR" config user.email)" \
+		commit --quiet -m "i18n: pt_BR language pack for ${CURRENT}"
+
+	info "pushing $LANG_BRANCH"
+	git -C "$LANG_REPO" push origin "$LANG_BRANCH" --force --quiet
+
+	LANG_SHA=$(git -C "$LANG_REPO" rev-parse HEAD)
+	echo ""
+	echo "Language branch $LANG_BRANCH pushed ($LANG_SHA)."
+	echo "CI will compile .mo and upload to the GitHub Release."
+	exit 0
 fi
 
-# ── Build language branch ─────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# SUBCOMMAND: release (patch / minor / major / explicit version)
+# Bump version, update POT, regenerate README, commit, tag, push.
+# ─────────────────────────────────────────────────────────────────────────────
 
-LANG_BRANCH="language/${NEW_VERSION}"
-LANG_COMMIT_SHA=""
+require_cmd git
+require_cmd node
+require_cmd wp
 
-if [[ -d "$LANG_SRC" ]]; then
-  PO_FILES=( "$LANG_SRC"/axellcore-*.po )
-  if [[ -f "${PO_FILES[0]}" ]]; then
-    info "building language branch $LANG_BRANCH from $LANG_SRC"
+BUMP="$CMD"
 
-    LANG_WORK=$(mktemp -d)
-    trap 'rm -rf "$LANG_WORK"' EXIT
+CURRENT=$(current_version)
+[[ "$CURRENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+	|| die "could not parse current version from plugin header: $CURRENT"
 
-    for PO in "${PO_FILES[@]}"; do
-      [[ -f "$PO" ]] || continue
-      LOCALE=$(basename "$PO" .po | sed 's/^axellcore-//')
-      DEST_PO="$LANG_WORK/axellcore-${LOCALE}.po"
-      cp "$PO" "$DEST_PO"
-      # Update Project-Id-Version to match the release version.
-      sed -i '' "s/^\"Project-Id-Version:.*\$/\"Project-Id-Version: axellcore ${NEW_VERSION}\\\\n\"/" "$DEST_PO"
-      # Update PO-Revision-Date to today.
-      TODAY_ISO=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
-      sed -i '' "s/^\"PO-Revision-Date:.*\$/\"PO-Revision-Date: ${TODAY_ISO}\\\\n\"/" "$DEST_PO"
-      msgfmt "$DEST_PO" -o "$LANG_WORK/axellcore-${LOCALE}.mo"
-      info "compiled $LOCALE"
-    done
+IFS='.' read -r MAJ MIN PAT <<< "$CURRENT"
 
-    # Build orphan branch in an isolated worktree clone
-    LANG_REPO=$(mktemp -d)
-    trap 'rm -rf "$LANG_WORK" "$LANG_REPO"' EXIT
+case "$BUMP" in
+	major)             NEW_VERSION="$((MAJ+1)).0.0" ;;
+	minor)             NEW_VERSION="${MAJ}.$((MIN+1)).0" ;;
+	patch)             NEW_VERSION="${MAJ}.${MIN}.$((PAT+1))" ;;
+	[0-9]*.[0-9]*.[0-9]*)
+		NEW_VERSION="$BUMP"
+		[[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+			|| die "invalid explicit version: $NEW_VERSION"
+		;;
+	*) die "first argument must be patch, minor, major, explicit semver, or 'language' (got: $BUMP)" ;;
+esac
 
-    git -C "$LANG_REPO" init --quiet
-    git -C "$LANG_REPO" remote add origin "$(git remote get-url origin)"
+echo ""
+echo "axellcore $CURRENT → $NEW_VERSION"
+echo ""
 
-    # Start orphan branch
-    git -C "$LANG_REPO" checkout --orphan "$LANG_BRANCH" --quiet
-    git -C "$LANG_REPO" rm -rf . --quiet 2>/dev/null || true
+cd "$PLUGIN_DIR"
 
-    cp "$LANG_WORK"/axellcore-*.po "$LANG_WORK"/axellcore-*.mo "$LANG_REPO/"
+git fetch origin --quiet
 
-    git -C "$LANG_REPO" add .
-    git -C "$LANG_REPO" \
-      -c user.name="$(git config user.name)" \
-      -c user.email="$(git config user.email)" \
-      commit --quiet -m "i18n: language packs for ${NEW_VERSION}"
+git ls-remote --exit-code origin "refs/tags/${NEW_VERSION}" &>/dev/null \
+	&& die "tag ${NEW_VERSION} already exists on remote"
 
-    info "pushing $LANG_BRANCH"
-    git -C "$LANG_REPO" push origin "$LANG_BRANCH" --force --quiet
+# ── Bump version ─────────────────────────────────────────────────────────────
 
-    LANG_COMMIT_SHA=$(git -C "$LANG_REPO" rev-parse HEAD)
-    info "language branch pushed: $LANG_COMMIT_SHA"
-  else
-    info "no .po files found in $LANG_SRC — skipping language branch"
-  fi
-else
-  info "LANG_SRC not found ($LANG_SRC) — skipping language branch"
+info "bumping version in axellcore.php and readme.txt"
+
+sed -i '' "s/ \* Version:.*/ * Version:           ${NEW_VERSION}/" "$PLUGIN_FILE"
+sed -i '' "s/define( 'AXELLCORE_VERSION', '[^']*' )/define( 'AXELLCORE_VERSION', '${NEW_VERSION}' )/" "$PLUGIN_FILE"
+sed -i '' "s/^Stable tag:.*/Stable tag: ${NEW_VERSION}/" "$README_TXT"
+
+if ! grep -q "^= ${NEW_VERSION} =" "$README_TXT"; then
+	TODAY=$(date -u +%Y-%m-%d)
+	sed -i '' "s/^== Changelog ==$/== Changelog ==\n\n= ${NEW_VERSION} =\n* Release ${NEW_VERSION} (${TODAY})./" "$README_TXT"
 fi
 
-# ── Commit, tag, push ─────────────────────────────────────────────────────────
+# ── Regenerate README.md ─────────────────────────────────────────────────────
+
+info "regenerating README.md via grunt"
+npm run readme --silent 2>/dev/null
+
+# ── Update POT ───────────────────────────────────────────────────────────────
+
+info "generating axellcore.pot via wp i18n make-pot"
+wp i18n make-pot "$PLUGIN_DIR" "$POT_FILE" \
+	--domain=axellcore \
+	--exclude=lib,vendor,node_modules,tests \
+	--quiet
+
+# ── Commit, tag, push ────────────────────────────────────────────────────────
 
 info "staging all changes"
 git add -A
@@ -241,12 +247,13 @@ git tag "${NEW_VERSION}"
 info "pushing main and tag"
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 if ! git push origin "$BRANCH" --quiet 2>/dev/null; then
-  info "push rejected — retrying with --force"
-  git push origin "$BRANCH" --force --quiet
+	info "push rejected — retrying with --force"
+	git push origin "$BRANCH" --force --quiet
 fi
 git push origin "${NEW_VERSION}" --quiet
 
 echo ""
 echo "Released ${NEW_VERSION}."
-[[ -n "$LANG_COMMIT_SHA" ]] && echo "Language branch $LANG_BRANCH pushed — release workflow will upload packs."
-echo "https://github.com/$(git remote get-url origin | sed 's/.*github\.com[:/]//' | sed 's/\.git$//')/releases/tag/${NEW_VERSION}"
+echo "Run './bin/release.sh language' after translating to publish language packs."
+REPO=$(git remote get-url origin | sed 's/.*github\.com[:/]//' | sed 's/\.git$//')
+echo "https://github.com/${REPO}/releases/tag/${NEW_VERSION}"
