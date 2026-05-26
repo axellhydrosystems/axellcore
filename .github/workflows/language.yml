@@ -1,0 +1,68 @@
+name: Language
+
+on:
+  push:
+    branches: ['language/**']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to attach language packs to (e.g. 0.2.8)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  language:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve version
+        id: ctx
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "tag=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            # GITHUB_REF_NAME = language/0.2.8 → strip prefix
+            echo "tag=${GITHUB_REF_NAME#language/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout language branch
+        uses: actions/checkout@v4
+        with:
+          # For workflow_dispatch: check out language/<version>; for branch push:
+          # the triggering branch is already the right one.
+          ref: language/${{ steps.ctx.outputs.tag }}
+
+      - name: Install gettext
+        run: sudo apt-get install -y gettext
+
+      - name: Compile and package language zips
+        id: build
+        run: |
+          tag="${{ steps.ctx.outputs.tag }}"
+          mkdir -p /tmp/langs
+          files=""
+
+          for po in axellcore-*.po; do
+            [ -f "$po" ] || continue
+            locale=$(basename "$po" .po | sed 's/^axellcore-//')
+            msgfmt "$po" -o "/tmp/langs/axellcore-${locale}.mo"
+            cp "$po" "/tmp/langs/axellcore-${locale}.po"
+            (cd /tmp/langs && zip "axellcore.${tag}-${locale}.zip" \
+              "axellcore-${locale}.po" \
+              "axellcore-${locale}.mo")
+            files="${files:+$files,}/tmp/langs/axellcore.${tag}-${locale}.zip"
+          done
+
+          echo "paths=$files" >> "$GITHUB_OUTPUT"
+          [ -n "$files" ] \
+            && echo "has_files=true"  >> "$GITHUB_OUTPUT" \
+            || echo "has_files=false" >> "$GITHUB_OUTPUT"
+
+      - name: Upload language zips to release
+        if: steps.build.outputs.has_files == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ctx.outputs.tag }}
+          files: ${{ steps.build.outputs.paths }}
+          generate_release_notes: false
