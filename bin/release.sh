@@ -139,7 +139,10 @@ for block in blocks:
         continue
     is_fuzzy   = any(l.strip() == '#, fuzzy' for l in lines)
     msgid_val  = ' '.join(re.findall(r'^msgid\s+"(.*)"', '\n'.join(lines), re.M))
-    msgstr_val = ' '.join(re.findall(r'^msgstr\s+"(.*)"', '\n'.join(lines), re.M))
+    # Accept both singular msgstr and plural msgstr[N] forms.
+    msgstr_val = ' '.join(
+        re.findall(r'^msgstr(?:\[\d+\])?\s+"(.*)"', '\n'.join(lines), re.M)
+    )
     if msgid_val and (is_fuzzy or not msgstr_val.strip()):
         missing.append(msgid_val)
 for m in missing:
