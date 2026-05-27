@@ -2,9 +2,9 @@
 Contributors: axellhydrosystems
 Tags: axell, hydrosystems, core
 Requires at least: 6.4
-Tested up to: 6.8
+Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.2.10
+Stable tag: 0.2.11
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,15 @@ Core functionality for Axell Hydrosystems.
 Core functionality for Axell Hydrosystems WordPress sites.
 
 == Changelog ==
+
+= 0.2.11 =
+* Add axellcore_allowed_cad_mimes() as the canonical source for CAD MIME types (skp, dwg, rfa), filterable via axellcore_allowed_cad_mimes.
+* Refactor axellcore_allowed_mimes() to merge CAD types with an empty extra array — placeholder for future non-CAD types, filterable via axellcore_allowed_mimes.
+* Add "CAD" filter option to the media library attachment-filters dropdown via post_mime_types.
+* Fix ajax_query_attachments_args and icon map to use axellcore_allowed_cad_mimes() instead of axellcore_allowed_mimes().
+* Restrict CAD types in upload_mimes to users with CAD upload capability; non-CAD extra types are unrestricted.
+* Add .editorconfig following WordPress plugin conventions.
+* Bump Tested up to 7.0.
 
 = 0.2.10 =
 * Fix migration 0.2.9 — match .rfa attachments via _wp_attached_file meta instead of post_title (WordPress strips the extension from the title on save).

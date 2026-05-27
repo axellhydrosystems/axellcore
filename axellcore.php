@@ -4,10 +4,10 @@
  *
  * @package           Axellcore
  * Description:       Core functionality for Axell Hydrosystems.
- * Version:           0.2.10
+ * Version:           0.2.11
  * Requires at least: 6.4
  * Requires PHP:      8.1
- * Tested up to:      6.8
+ * Tested up to:      7.0
  * Author:            Axell Hydrosystems
  * Author URI:        https://github.com/axellhydrosystems
  * License:           GPL-2.0-or-later
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AXELLCORE_VERSION', '0.2.10' );
+define( 'AXELLCORE_VERSION', '0.2.11' );
 define( 'AXELLCORE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'AXELLCORE_URL', plugin_dir_url( __FILE__ ) );
 
@@ -340,12 +340,16 @@ function axellcore_blocked_exts(): array {
 }
 
 /**
- * Central map of extra MIME types allowed for upload.
+ * CAD-specific MIME types managed by this plugin.
  *
- * Applies the `axellcore_allowed_mimes` filter so themes and other plugins can
- * add entries without touching core plugin code. Extensions listed in
- * `axellcore_blocked_exts()` are stripped after the filter runs — they can
- * never be unlocked from outside this plugin.
+ * This is the canonical source of CAD formats. It powers:
+ *   - The "CAD" filter group in the media library dropdown.
+ *   - The capability check for CAD uploads.
+ *   - The icon map for the media library.
+ *
+ * Filterable via `axellcore_allowed_cad_mimes` to add or override entries.
+ * Extensions listed in `axellcore_blocked_exts()` are stripped after the
+ * filter runs — they can never be unlocked from outside this plugin.
  *
  * Default entries:
  *   - .skp  — SketchUp model        (application/vnd.sketchup.skp)
@@ -354,19 +358,43 @@ function axellcore_blocked_exts(): array {
  *
  * @return array<string,string> Extension => MIME type, with blocked extensions removed.
  */
-function axellcore_allowed_mimes(): array {
-	$mimes   = apply_filters(
-		'axellcore_allowed_mimes',
+function axellcore_allowed_cad_mimes(): array {
+	$mimes = apply_filters(
+		'axellcore_allowed_cad_mimes',
 		array(
 			'skp' => 'application/vnd.sketchup.skp',
 			'dwg' => 'image/vnd.dwg',
 			'rfa' => 'application/x-ole-storage',
 		)
 	);
-	$blocked = axellcore_blocked_exts();
 
 	// Strip any dangerous extension added by external filters.
-	return array_diff_key( $mimes, array_flip( $blocked ) );
+	return array_diff_key( $mimes, array_flip( axellcore_blocked_exts() ) );
+}
+
+/**
+ * Full map of extra MIME types allowed for upload.
+ *
+ * Merges `axellcore_allowed_cad_mimes()` with additional types and passes the
+ * result through the `axellcore_allowed_mimes` filter. CAD types are always
+ * included — they cannot be removed through this filter.
+ *
+ * Extensions listed in `axellcore_blocked_exts()` are stripped after the
+ * filter runs — they can never be unlocked from outside this plugin.
+ *
+ * @return array<string,string> Extension => MIME type, with blocked extensions removed.
+ */
+function axellcore_allowed_mimes(): array {
+	$mimes = apply_filters(
+		'axellcore_allowed_mimes',
+		array_merge(
+			axellcore_allowed_cad_mimes(),
+			array()
+		)
+	);
+
+	// Strip any dangerous extension added by external filters.
+	return array_diff_key( $mimes, array_flip( axellcore_blocked_exts() ) );
 }
 
 /**
@@ -477,7 +505,7 @@ add_filter(
 		// Collect the image/* MIMEs we registered that are not real images.
 		$cad_image_mimes = array_values(
 			array_filter(
-				axellcore_allowed_mimes(),
+				axellcore_allowed_cad_mimes(),
 				fn( string $mime ) => str_starts_with( $mime, 'image/' )
 			)
 		);
@@ -529,19 +557,49 @@ add_action(
 );
 
 /**
+ * Add a "CAD" group to the media library attachment-filters dropdown.
+ *
+ * WordPress builds the <select> from the `post_mime_types` global filter.
+ * Each entry is [ singular_label, plural_label, edit_label ]; the key is the
+ * MIME type (or a comma-separated list) used as the <option value>.
+ *
+ * We register a single pseudo-entry whose key is the comma-joined list of all
+ * MIMEs returned by axellcore_allowed_mimes(). WordPress passes that string
+ * verbatim as post_mime_type to WP_Query, which accepts comma-separated values.
+ */
+add_filter(
+	'post_mime_types',
+	function ( array $post_mime_types ): array {
+		$mimes    = array_values( axellcore_allowed_cad_mimes() );
+		$mime_key = implode( ',', $mimes );
+
+		$post_mime_types[ $mime_key ] = array(
+			_x( 'CAD File', 'singular media type label', 'axellcore' ),
+			_x( 'CAD Files', 'plural media type label', 'axellcore' ),
+			/* translators: %s: number of CAD files */
+			_n_noop( 'CAD File <span class="count">(%s)</span>', 'CAD Files <span class="count">(%s)</span>', 'axellcore' ),
+		);
+
+		return $post_mime_types;
+	}
+);
+
+/**
  * Hooks into `upload_mimes` to merge CAD types into WordPress's upload allowlist.
  *
- * No-ops for users who lack CAD upload capability (Editor+ by default).
- * The merged entries come from `axellcore_allowed_mimes()`, which already has
- * dangerous extensions stripped.
+ * CAD types require the additional CAD upload capability (Editor+ by default).
+ * The merged entries come from `axellcore_allowed_cad_mimes()`, which already
+ * has dangerous extensions stripped.
  */
 add_filter(
 	'upload_mimes',
 	function ( array $mimes ): array {
-		if ( ! axellcore_current_user_can_upload_cad() ) {
-			return $mimes;
+		// CAD types — restricted to Editor+ (or whatever capability is set).
+		if ( axellcore_current_user_can_upload_cad() ) {
+			$mimes = array_merge( $mimes, axellcore_allowed_cad_mimes() );
 		}
-		return array_merge( $mimes, axellcore_allowed_mimes() );
+
+		return $mimes;
 	}
 );
 
