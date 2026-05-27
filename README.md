@@ -4,7 +4,7 @@
 **Requires at least:** 6.4  
 **Tested up to:** 6.8  
 **Requires PHP:** 8.1  
-**Stable tag:** 0.2.9  
+**Stable tag:** 0.2.10  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -15,6 +15,9 @@ Core functionality for Axell Hydrosystems.
 Core functionality for Axell Hydrosystems WordPress sites.
 
 ## Changelog ##
+
+### 0.2.10 ###
+* Fix migration 0.2.9 — match .rfa attachments via _wp_attached_file meta instead of post_title (WordPress strips the extension from the title on save).
 
 ### 0.2.9 ###
 * Add db update system for data migrations on plugin update.

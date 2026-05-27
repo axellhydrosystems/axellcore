@@ -10,6 +10,15 @@
 #   bin/release.sh language         # build language/<current-version> branch from LANG_SRC
 #                                   # run this after translating, independently of the release
 #
+# Options (release subcommands only):
+#   --no-commit   Stop after bumping files; do not commit, tag, or push.
+#   --no-tag      Commit but do not create a tag or push.
+#   --no-push     Commit and tag but do not push to remote.
+#
+#   Dependency rules (applied automatically):
+#     --no-commit  implies --no-tag and --no-push
+#     --no-tag     implies --no-push
+#
 # Language pack source (language subcommand):
 #   LANG_SRC=/path/to/languages/plugins   bin/release.sh language
 #
@@ -44,9 +53,30 @@ current_version() {
 
 # ── Dispatch ─────────────────────────────────────────────────────────────────
 
-[[ $# -ge 1 ]] || die "usage: bin/release.sh patch|minor|major|<version>|language"
+[[ $# -ge 1 ]] || die "usage: bin/release.sh patch|minor|major|<version>|language [--no-commit] [--no-tag] [--no-push]"
 
-CMD="$1"
+# ── Flag parsing ─────────────────────────────────────────────────────────────
+
+NO_COMMIT=0
+NO_TAG=0
+NO_PUSH=0
+
+CMD=""
+for ARG in "$@"; do
+	case "$ARG" in
+		--no-commit) NO_COMMIT=1 ;;
+		--no-tag)    NO_TAG=1 ;;
+		--no-push)   NO_PUSH=1 ;;
+		-*)          die "unknown option: $ARG" ;;
+		*)           [[ -z "$CMD" ]] && CMD="$ARG" || die "unexpected argument: $ARG" ;;
+	esac
+done
+
+[[ -n "$CMD" ]] || die "usage: bin/release.sh patch|minor|major|<version>|language [--no-commit] [--no-tag] [--no-push]"
+
+# Dependency rules: --no-commit => --no-tag => --no-push
+[[ $NO_COMMIT -eq 1 ]] && NO_TAG=1
+[[ $NO_TAG    -eq 1 ]] && NO_PUSH=1
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SUBCOMMAND: language
@@ -269,11 +299,29 @@ wp i18n make-pot "$PLUGIN_DIR" "$POT_FILE" \
 info "staging all changes"
 git add -A
 
+if [[ $NO_COMMIT -eq 1 ]]; then
+	echo ""
+	echo "Files bumped to ${NEW_VERSION} (--no-commit: skipping commit, tag and push)."
+	exit 0
+fi
+
 info "committing version bump"
 git commit --quiet -m "chore: release ${NEW_VERSION}"
 
+if [[ $NO_TAG -eq 1 ]]; then
+	echo ""
+	echo "Released ${NEW_VERSION} (--no-tag: skipping tag and push)."
+	exit 0
+fi
+
 info "tagging ${NEW_VERSION}"
 git tag "${NEW_VERSION}"
+
+if [[ $NO_PUSH -eq 1 ]]; then
+	echo ""
+	echo "Released ${NEW_VERSION} (--no-push: skipping push)."
+	exit 0
+fi
 
 info "pushing main and tag"
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -286,5 +334,5 @@ git push origin "${NEW_VERSION}" --quiet
 echo ""
 echo "Released ${NEW_VERSION}."
 echo "Run './bin/release.sh language' after translating to publish language packs."
-REPO=$(git remote get-url origin | sed 's/.*github\.com[:/]//' | sed 's/\.git$//')
+REPO=$(git remote get-url origin | sed 's/.*github\.com[:\/]//' | sed 's/\.git$//')
 echo "https://github.com/${REPO}/releases/tag/${NEW_VERSION}"

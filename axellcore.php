@@ -4,7 +4,7 @@
  *
  * @package           Axellcore
  * Description:       Core functionality for Axell Hydrosystems.
- * Version:           0.2.9
+ * Version:           0.2.10
  * Requires at least: 6.4
  * Requires PHP:      8.1
  * Tested up to:      6.8
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AXELLCORE_VERSION', '0.2.9' );
+define( 'AXELLCORE_VERSION', '0.2.10' );
 define( 'AXELLCORE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'AXELLCORE_URL', plugin_dir_url( __FILE__ ) );
 
@@ -33,9 +33,13 @@ define( 'AXELLCORE_URL', plugin_dir_url( __FILE__ ) );
  * @var array<string, list<string>> $_axellcore_db_updates
  */
 $GLOBALS['_axellcore_db_updates'] = array(
-	'0.2.9' => array(
+	'0.2.9'  => array(
 		'axell_update_029_rfa_mime_type',
 		'axell_update_029_db_version',
+	),
+	'0.2.10' => array(
+		'axell_update_0210_rfa_mime_type',
+		'axell_update_0210_db_version',
 	),
 );
 
@@ -191,6 +195,83 @@ function axell_update_029_rfa_mime_type(): void {
  */
 function axell_update_029_db_version(): void {
 	axellcore_update_db_version( '0.2.9' );
+}
+
+// ── Migration: 0.2.10 ────────────────────────────────────────────────────────
+
+/**
+ * Fix .rfa attachments stored with MIME type application/octet-stream.
+ *
+ * Migration 0.2.9 failed in production because it matched against post_title,
+ * but WordPress strips the file extension when saving the attachment title.
+ * The reliable source of truth is the _wp_attached_file postmeta value.
+ *
+ * This migration re-runs the same fix — updating post_mime_type to
+ * application/x-ole-storage — using a JOIN on wp_postmeta instead.
+ *
+ * @return void
+ */
+function axell_update_0210_rfa_mime_type(): void {
+	global $wpdb;
+
+	// Find .rfa attachments still carrying the generic octet-stream MIME type.
+	// Join on _wp_attached_file to match the extension reliably.
+	// WordPress strips the extension from post_title — this is the correct check.
+	$ids = $wpdb->get_col(
+		$wpdb->prepare(
+			"SELECT p.ID
+			 FROM {$wpdb->posts} p
+			 INNER JOIN {$wpdb->postmeta} pm
+			         ON pm.post_id = p.ID
+			        AND pm.meta_key = '_wp_attached_file'
+			 WHERE p.post_type      = 'attachment'
+			   AND p.post_mime_type = %s
+			   AND pm.meta_value    LIKE %s",
+			'application/octet-stream',
+			'%.rfa'
+		)
+	);
+
+	if ( empty( $ids ) ) {
+		return;
+	}
+
+	// Bulk-update post_mime_type.
+	$int_ids      = array_map( 'intval', $ids );
+	$placeholders = implode( ', ', array_fill( 0, count( $int_ids ), '%d' ) );
+	$table        = $wpdb->posts;
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+	$wpdb->query(
+		$wpdb->prepare(
+			"UPDATE `$table` SET post_mime_type = %s WHERE ID IN ($placeholders)",
+			array_merge( array( 'application/x-ole-storage' ), $int_ids )
+		)
+	);
+	// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+
+	// Update the 'mime-type' key inside _wp_attachment_metadata for each attachment.
+	foreach ( $ids as $id ) {
+		$meta = get_post_meta( (int) $id, '_wp_attachment_metadata', true );
+		if ( is_array( $meta ) && isset( $meta['mime-type'] ) ) {
+			$meta['mime-type'] = 'application/x-ole-storage';
+			update_post_meta( (int) $id, '_wp_attachment_metadata', $meta );
+		}
+	}
+
+	// Invalidate any cached attachment data for affected IDs.
+	array_map( 'clean_attachment_cache', array_map( 'intval', $ids ) );
+}
+
+/**
+ * Bump db_version to 0.2.10.
+ *
+ * Always the last callback in the 0.2.10 group so the version is only
+ * recorded after all preceding migrations completed successfully.
+ *
+ * @return void
+ */
+function axell_update_0210_db_version(): void {
+	axellcore_update_db_version( '0.2.10' );
 }
 
 // SelfDirectory provides self-hosted update checking via GitHub Releases.
