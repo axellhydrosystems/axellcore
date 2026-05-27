@@ -574,8 +574,8 @@ add_filter(
 		$mime_key = implode( ',', $mimes );
 
 		$post_mime_types[ $mime_key ] = array(
-			_x( 'CAD File', 'singular media type label', 'axellcore' ),
-			_x( 'CAD Files', 'plural media type label', 'axellcore' ),
+			__( 'CAD Files', 'axellcore' ),
+			__( 'Manage CAD Files', 'axellcore' ),
 			/* translators: %s: number of CAD files */
 			_n_noop( 'CAD File <span class="count">(%s)</span>', 'CAD Files <span class="count">(%s)</span>', 'axellcore' ),
 		);

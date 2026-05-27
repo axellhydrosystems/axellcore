@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-27T14:50:08+00:00\n"
+"POT-Creation-Date: 2026-05-27T17:30:39+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: axellcore\n"
@@ -35,13 +35,11 @@ msgid "https://github.com/axellhydrosystems"
 msgstr ""
 
 #: axellcore.php:577
-msgctxt "singular media type label"
-msgid "CAD File"
+msgid "CAD Files"
 msgstr ""
 
 #: axellcore.php:578
-msgctxt "plural media type label"
-msgid "CAD Files"
+msgid "Manage CAD Files"
 msgstr ""
 
 #. translators: %s: number of CAD files
