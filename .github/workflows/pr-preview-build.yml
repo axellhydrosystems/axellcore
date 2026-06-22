@@ -1,0 +1,18 @@
+name: PR Preview - Build
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+jobs:
+  build:
+    uses: WordPress/action-wp-playground-pr-preview/.github/workflows/preview-build.yml@v3
+    with:
+      artifacts: plugin-zip=build/axellcore.zip
+      build-command: |
+        git submodule update --init --recursive
+        mkdir -p build
+        git archive HEAD --prefix=axellcore/ | tar xf - -C build/
+        git -C lib/selfdirectory archive HEAD \
+          --prefix=axellcore/lib/selfdirectory/ \
+          -- class-selfdirectory.php \
+          | tar xf - -C build/
+        (cd build && zip -r axellcore.zip axellcore)
