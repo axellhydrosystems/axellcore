@@ -1,9 +1,2 @@
-table.wp-list-table {
-	tbody tr {
-		cursor: move;
-
-		a {
-			cursor: pointer;
-		}
-	}
-}
+// Sorting-mode styles are applied via JS (post-ordering.ts) so the cursor
+// only appears when the script is loaded (orderby=menu_order+title).

@@ -8,6 +8,8 @@ jQuery( function ( $ ) {
 	const itemSelector   = 'tbody tr:not(.inline-edit-row)';
 	const postIdSelector = '.check-column input[type="checkbox"]';
 
+	$( tableSelector ).find( 'tbody td, tbody th' ).css( 'cursor', 'move' );
+
 	$( tableSelector ).sortable( {
 		items:                itemSelector,
 		cursor:               'move',
