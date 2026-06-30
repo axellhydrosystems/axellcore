@@ -4,7 +4,7 @@
 **Requires at least:** 6.4  
 **Tested up to:** 7.0  
 **Requires PHP:** 8.1  
-**Stable tag:** 0.2.11  
+**Stable tag:** 0.3.0  
 **License:** GPL-2.0-or-later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -15,6 +15,14 @@ Core functionality for Axell Hydrosystems.
 Core functionality for Axell Hydrosystems WordPress sites.
 
 ## Changelog ##
+
+### 0.3.0 ###
+* Add drag-and-drop post ordering for spa, banheiras, banheiras-de-imersao, bicas-de-piso, colunas-de-banho, bandejas and acessorios post types.
+* Register post types for ordering via axellcore_post_types_ordering filter; DB option also supported.
+* Add handle column to post list tables with jQuery UI Sortable; order saved to menu_order via AJAX.
+* Apply menu_order ASC ordering via pre_get_posts when no explicit orderby is set.
+* Add TypeScript source for admin JS and SCSS source for admin CSS; compiled outputs excluded from git.
+* Add npm build scripts (build:js via tsc, build:css via sass) and update release and PR preview workflows to compile assets before packaging.
 
 ### 0.2.11 ###
 * Add axellcore_allowed_cad_mimes() as the canonical source for CAD MIME types (skp, dwg, rfa), filterable via axellcore_allowed_cad_mimes.
