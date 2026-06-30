@@ -74,7 +74,8 @@ function axell_post_ordering_views( array $views ): array {
 	}
 
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$is_sorting = isset( $_GET['axell_ordering'] );
+	$orderby    = isset( $_GET['orderby'] ) ? sanitize_text_field( wp_unslash( $_GET['orderby'] ) ) : '';
+	$is_sorting = str_starts_with( $orderby, 'menu_order' );
 
 	// Remove "current" from "All" while in sorting mode so only "Sorting" is highlighted.
 	if ( $is_sorting && isset( $views['all'] ) ) {
@@ -85,8 +86,8 @@ function axell_post_ordering_views( array $views ): array {
 		);
 	}
 
-	$args         = $post_type !== 'post' ? array( 'post_type' => $post_type ) : array();
-	$sorting_url  = add_query_arg( array_merge( $args, array( 'axell_ordering' => '1' ) ), admin_url( 'edit.php' ) );
+	$args        = $post_type !== 'post' ? array( 'post_type' => $post_type ) : array();
+	$sorting_url = add_query_arg( array_merge( $args, array( 'orderby' => 'menu_order title', 'order' => 'ASC' ) ), admin_url( 'edit.php' ) );
 
 	$views['axell_sorting'] = sprintf(
 		'<a href="%s"%s>%s</a>',
@@ -115,7 +116,9 @@ function axell_admin_post_ordering_script( string $hook ): void {
 		return;
 	}
 
-	if ( ! isset( $_GET['axell_ordering'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$orderby = isset( $_GET['orderby'] ) ? sanitize_text_field( wp_unslash( $_GET['orderby'] ) ) : '';
+	if ( ! str_starts_with( $orderby, 'menu_order' ) ) {
 		return;
 	}
 
