@@ -4,6 +4,7 @@
 		"module": "none",
 		"lib": ["ES2017", "DOM"],
 		"strict": false,
+		"types": ["jquery", "jqueryui"],
 		"outDir": "assets/js/admin",
 		"rootDir": "assets/js/admin"
 	},
