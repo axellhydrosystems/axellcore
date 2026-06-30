@@ -15,6 +15,14 @@ jobs:
         with:
           submodules: recursive
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Build assets
+        run: npm ci && npm run build
+
       - name: Build plugin zip
         run: |
           tag="${GITHUB_REF_NAME}"
@@ -26,6 +34,15 @@ jobs:
             --prefix=axellcore/lib/selfdirectory/ \
             -- class-selfdirectory.php \
             | tar xf - -C /tmp/build/
+
+          # Copy compiled assets (generated — not tracked in git).
+          cp assets/js/admin/post-ordering.js /tmp/build/axellcore/assets/js/admin/
+          cp assets/css/admin/post-ordering.css /tmp/build/axellcore/assets/css/admin/
+
+          # Remove source-only files from the release zip.
+          rm -f /tmp/build/axellcore/assets/js/admin/post-ordering.ts
+          rm -f /tmp/build/axellcore/assets/css/admin/post-ordering.scss
+          rm -f /tmp/build/axellcore/tsconfig.json
 
           cd /tmp/build && zip -r "axellcore.${tag}.zip" axellcore
           echo "zip=/tmp/build/axellcore.${tag}.zip" >> "$GITHUB_OUTPUT"

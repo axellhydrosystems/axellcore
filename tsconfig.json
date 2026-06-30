@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"target": "ES2017",
+		"module": "none",
+		"lib": ["ES2017", "DOM"],
+		"strict": false,
+		"outDir": "assets/js/admin",
+		"rootDir": "assets/js/admin"
+	},
+	"include": ["assets/js/admin/*.ts"],
+	"exclude": ["node_modules"]
+}

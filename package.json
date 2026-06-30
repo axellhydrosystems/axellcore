@@ -4,6 +4,9 @@
   "license": "GPL-2.0-or-later",
   "private": true,
   "scripts": {
+    "build:js": "tsc",
+    "build:css": "sass assets/css/admin/post-ordering.scss assets/css/admin/post-ordering.css --no-source-map",
+    "build": "npm run build:js && npm run build:css",
     "readme": "grunt readme",
     "playground": "wp-playground-cli server --mount=.:/wordpress/wp-content/plugins/axellcore --login",
     "test:e2e": "playwright test",
@@ -12,8 +15,12 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0",
+    "@types/jquery": "^3.5.32",
+    "@types/jqueryui": "^1.12.23",
     "@wp-playground/cli": "^3.1.33",
     "grunt": "^1.6.2",
-    "grunt-wp-readme-to-markdown": "^2.1.0"
+    "grunt-wp-readme-to-markdown": "^2.1.0",
+    "sass": "^1.89.2",
+    "typescript": "^5.8.3"
   }
 }

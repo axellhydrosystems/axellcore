@@ -9,10 +9,17 @@ jobs:
       artifacts: plugin-zip=build/axellcore.zip
       build-command: |
         git submodule update --init --recursive
+        npm ci
+        npm run build
         mkdir -p build
         git archive HEAD --prefix=axellcore/ | tar xf - -C build/
         git -C lib/selfdirectory archive HEAD \
           --prefix=axellcore/lib/selfdirectory/ \
           -- class-selfdirectory.php \
           | tar xf - -C build/
+        cp assets/js/admin/post-ordering.js build/axellcore/assets/js/admin/
+        cp assets/css/admin/post-ordering.css build/axellcore/assets/css/admin/
+        rm -f build/axellcore/assets/js/admin/post-ordering.ts
+        rm -f build/axellcore/assets/css/admin/post-ordering.scss
+        rm -f build/axellcore/tsconfig.json
         (cd build && zip -r axellcore.zip axellcore)

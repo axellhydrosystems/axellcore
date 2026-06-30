@@ -9,3 +9,5 @@ test-results/
 *.dwg
 *.rfa
 *.skp
+assets/**/*.js
+assets/**/*.css
