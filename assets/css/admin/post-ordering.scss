@@ -2,12 +2,19 @@ $handle-width: 17px;
 $handle-color: #999;
 
 table.wp-list-table {
+	tbody tr {
+		cursor: move;
+
+		a {
+			cursor: pointer;
+		}
+	}
+
 	.column-handle {
 		width: $handle-width;
 	}
 
 	tbody td.column-handle {
-		cursor: move;
 		width: $handle-width;
 		text-align: center;
 		vertical-align: text-top;

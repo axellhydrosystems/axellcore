@@ -59,7 +59,7 @@ jQuery( function ( $ ) {
 	$( tableSelector ).sortable( {
 		items:                itemSelector,
 		cursor:               'move',
-		handle:               '.column-handle',
+		cancel:               'a, input, button, select, option',
 		axis:                 'y',
 		forcePlaceholderSize: true,
 		helper:               'clone',
