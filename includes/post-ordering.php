@@ -61,8 +61,8 @@ function axell_post_ordering_views( array $views ): array {
 		);
 	}
 
-	$args        = $post_type !== 'post' ? array( 'post_type' => $post_type ) : array();
-	$sorting_url = add_query_arg( array_merge( $args, array( 'orderby' => 'menu_order title', 'order' => 'ASC' ) ), admin_url( 'edit.php' ) );
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$sorting_url = add_query_arg( array( 'orderby' => 'menu_order title', 'order' => 'ASC' ), remove_query_arg( array( 'orderby', 'order' ) ) );
 
 	$views['axell_sorting'] = sprintf(
 		'<a href="%s"%s>%s</a>',
