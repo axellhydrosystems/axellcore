@@ -26,32 +26,7 @@ function axell_post_types_ordering(): array {
 	return array_values( $post_types );
 }
 
-/**
- * Add the drag handle column to the post list table.
- *
- * @param array<string,string> $columns
- * @return array<string,string>
- */
-function axell_post_ordering_columns( array $columns ): array {
-	$columns['handle'] = '';
-	return $columns;
-}
-
-/**
- * Render the hidden post-ID input inside the handle column.
- *
- * @param string $column_name
- * @param int    $post_id
- */
-function axell_post_ordering_column( string $column_name, int $post_id ): void {
-	if ( 'handle' === $column_name ) {
-		echo '<input type="hidden" name="post_id" value="' . esc_attr( (string) $post_id ) . '" />';
-	}
-}
-
 foreach ( axell_post_types_ordering() as $post_type ) {
-	add_filter( "manage_{$post_type}_posts_columns", 'axell_post_ordering_columns' );
-	add_action( "manage_{$post_type}_posts_custom_column", 'axell_post_ordering_column', 10, 2 );
 	add_filter( "views_edit-{$post_type}", 'axell_post_ordering_views' );
 }
 

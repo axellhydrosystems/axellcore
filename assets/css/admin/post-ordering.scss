@@ -1,34 +1,9 @@
-$handle-width: 17px;
-$handle-color: #999;
-
 table.wp-list-table {
 	tbody tr {
 		cursor: move;
 
 		a {
 			cursor: pointer;
-		}
-	}
-
-	.column-handle {
-		width: $handle-width;
-	}
-
-	tbody td.column-handle {
-		width: $handle-width;
-		text-align: center;
-		vertical-align: text-top;
-
-		&::before {
-			content: "\f333";
-			font-family: Dashicons;
-			text-align: center;
-			line-height: 1;
-			color: $handle-color;
-			display: block;
-			width: $handle-width;
-			height: 100%;
-			margin: 4px 0 0 0;
 		}
 	}
 }

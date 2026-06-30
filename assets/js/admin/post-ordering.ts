@@ -3,58 +3,10 @@
 
 declare const ajaxurl: string;
 
-interface JQueryStatic {
-	axellAddMissingSortHandles(): void;
-}
-
 jQuery( function ( $ ) {
-	const tableSelector = 'table.wp-list-table';
-	const itemSelector  = 'tbody tr:not(.inline-edit-row)';
-	const columnHandle  = '<td class="column-handle"></td>';
-	let postIdSelector  = '.column-handle input[name="post_id"]';
-
-	if ( 0 === $( tableSelector ).find( '.column-handle' ).length ) {
-		$( tableSelector )
-			.find( 'tr:not(.inline-edit-row)' )
-			.append( columnHandle );
-		postIdSelector = '.check-column input';
-	}
-
-	$( tableSelector ).find( '.column-handle' ).show();
-
-	$.axellAddMissingSortHandles = function (): void {
-		const allTableRows   = $( tableSelector ).find( 'tbody > tr' );
-		const rowsWithHandle = $( tableSelector )
-			.find( 'tbody > tr > td.column-handle' )
-			.parent();
-		if ( allTableRows.length !== rowsWithHandle.length ) {
-			allTableRows.each( function ( _index: number, elem: HTMLElement ) {
-				if ( ! rowsWithHandle.is( elem ) ) {
-					$( elem ).append( columnHandle );
-				}
-			} );
-		}
-		$( tableSelector ).find( '.column-handle' ).show();
-	};
-
-	$( document ).ajaxComplete( function (
-		_event: JQuery.TriggeredEvent,
-		request: JQuery.jqXHR,
-		options: JQuery.AjaxSettings
-	): void {
-		const data = typeof options.data === 'string' ? options.data : '';
-		if (
-			request &&
-			4 === request.readyState &&
-			200 === request.status &&
-			data &&
-			( 0 <= data.indexOf( '_inline_edit' ) ||
-				0 <= data.indexOf( 'add-tag' ) )
-		) {
-			$.axellAddMissingSortHandles();
-			$( document.body ).trigger( 'init_tooltips' );
-		}
-	} );
+	const tableSelector  = 'table.wp-list-table';
+	const itemSelector   = 'tbody tr:not(.inline-edit-row)';
+	const postIdSelector = '.check-column input[type="checkbox"]';
 
 	$( tableSelector ).sortable( {
 		items:                itemSelector,
