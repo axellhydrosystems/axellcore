@@ -23,3 +23,8 @@ blueprint-dev.json    export-ignore
 Gruntfile.js          export-ignore
 README.md             export-ignore
 languages/            export-ignore
+.editorconfig         export-ignore
+tsconfig.json         export-ignore
+post-ordering-prompt.md export-ignore
+assets/**/*.ts        export-ignore
+assets/**/*.scss      export-ignore

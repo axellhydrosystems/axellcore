@@ -19,7 +19,4 @@ jobs:
           | tar xf - -C build/
         cp assets/js/admin/post-ordering.js build/axellcore/assets/js/admin/
         cp assets/css/admin/post-ordering.css build/axellcore/assets/css/admin/
-        rm -f build/axellcore/assets/js/admin/post-ordering.ts
-        rm -f build/axellcore/assets/css/admin/post-ordering.scss
-        rm -f build/axellcore/tsconfig.json
         (cd build && zip -r axellcore.zip axellcore)

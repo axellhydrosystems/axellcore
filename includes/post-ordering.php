@@ -52,6 +52,52 @@ function axell_post_ordering_column( string $column_name, int $post_id ): void {
 foreach ( axell_post_types_ordering() as $post_type ) {
 	add_filter( "manage_{$post_type}_posts_columns", 'axell_post_ordering_columns' );
 	add_action( "manage_{$post_type}_posts_custom_column", 'axell_post_ordering_column', 10, 2 );
+	add_filter( "views_edit-{$post_type}", 'axell_post_ordering_views' );
+}
+
+/**
+ * Append a "Sorting" entry to the post-status filter bar (subsubsub).
+ *
+ * When no explicit `orderby` is set the list is in drag-and-drop sorting mode.
+ * In that state "Sorting" is marked current and "All" is unmarked so only one
+ * entry appears active at a time.
+ *
+ * @param array<string,string> $views
+ * @return array<string,string>
+ */
+function axell_post_ordering_views( array $views ): array {
+	$screen    = get_current_screen();
+	$post_type = $screen ? $screen->post_type : '';
+
+	if ( ! $post_type ) {
+		return $views;
+	}
+
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$is_sorting = ! isset( $_GET['orderby'] );
+
+	// Remove "current" from "All" while in sorting mode so only "Sorting" is highlighted.
+	if ( $is_sorting && isset( $views['all'] ) ) {
+		$views['all'] = str_replace(
+			array( ' class="current"', ' aria-current="page"' ),
+			'',
+			$views['all']
+		);
+	}
+
+	$base_url = add_query_arg(
+		$post_type !== 'post' ? array( 'post_type' => $post_type ) : array(),
+		admin_url( 'edit.php' )
+	);
+
+	$views['axell_sorting'] = sprintf(
+		'<a href="%s"%s>%s</a>',
+		esc_url( $base_url ),
+		$is_sorting ? ' class="current" aria-current="page"' : '',
+		esc_html__( 'Sorting', 'axellcore' )
+	);
+
+	return $views;
 }
 
 /**

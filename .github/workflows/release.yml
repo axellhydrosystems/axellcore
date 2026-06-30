@@ -35,14 +35,9 @@ jobs:
             -- class-selfdirectory.php \
             | tar xf - -C /tmp/build/
 
-          # Copy compiled assets (generated — not tracked in git).
+          # Copy compiled assets (generated — not tracked in git, not in archive).
           cp assets/js/admin/post-ordering.js /tmp/build/axellcore/assets/js/admin/
           cp assets/css/admin/post-ordering.css /tmp/build/axellcore/assets/css/admin/
-
-          # Remove source-only files from the release zip.
-          rm -f /tmp/build/axellcore/assets/js/admin/post-ordering.ts
-          rm -f /tmp/build/axellcore/assets/css/admin/post-ordering.scss
-          rm -f /tmp/build/axellcore/tsconfig.json
 
           cd /tmp/build && zip -r "axellcore.${tag}.zip" axellcore
           echo "zip=/tmp/build/axellcore.${tag}.zip" >> "$GITHUB_OUTPUT"
