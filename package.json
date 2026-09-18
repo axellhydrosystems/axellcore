@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "build:js": "tsc",
-    "build:css": "sass assets/css/admin/post-ordering.scss assets/css/admin/post-ordering.css --no-source-map",
+    "build:css": "sass assets/css/admin:assets/css/admin --no-source-map",
     "build": "npm run build:js && npm run build:css",
     "readme": "grunt readme",
     "playground": "wp-playground-cli server --mount=.:/wordpress/wp-content/plugins/axellcore --login",

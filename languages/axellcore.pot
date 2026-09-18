@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Axell Core 0.3.0\n"
+"Project-Id-Version: Axell Core 0.4.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/axellcore\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-30T15:46:48+00:00\n"
+"POT-Creation-Date: 2026-09-18T21:50:05+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: axellcore\n"
@@ -34,22 +34,486 @@ msgstr ""
 msgid "https://github.com/axellhydrosystems"
 msgstr ""
 
-#: includes/media.php:274
+#. translators: %s: post type label (lower case on the page title).
+#: includes/import-export/class-axellcore-admin.php:47
+#: includes/import-export/class-axellcore-admin.php:307
+#: includes/import-export/class-axellcore-admin.php:503
+#, php-format
+msgid "Import %s"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:48
+#: includes/import-export/class-axellcore-admin.php:143
+#: includes/import-export/class-axellcore-admin.php:215
+msgid "Import"
+msgstr ""
+
+#. translators: %s: post type label (lower case on the page title).
+#: includes/import-export/class-axellcore-admin.php:56
+#: includes/import-export/class-axellcore-admin.php:590
+#, php-format
+msgid "Export %s"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:57
+#: includes/import-export/class-axellcore-admin.php:147
+msgid "Export"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:103
+msgid "Import complete!"
+msgstr ""
+
+#. translators: %s: number of records.
+#: includes/import-export/class-axellcore-admin.php:105
+#, php-format
+msgid "%s record imported"
+msgstr ""
+
+#. translators: %s: number of records.
+#: includes/import-export/class-axellcore-admin.php:105
+#, php-format
+msgid "%s records imported"
+msgstr ""
+
+#. translators: %s: number of records.
+#: includes/import-export/class-axellcore-admin.php:107
+#, php-format
+msgid "%s record updated"
+msgstr ""
+
+#. translators: %s: number of records.
+#: includes/import-export/class-axellcore-admin.php:107
+#, php-format
+msgid "%s records updated"
+msgstr ""
+
+#. translators: %s: number of records.
+#: includes/import-export/class-axellcore-admin.php:109
+#, php-format
+msgid "%s record was skipped"
+msgstr ""
+
+#. translators: %s: number of records.
+#: includes/import-export/class-axellcore-admin.php:109
+#, php-format
+msgid "%s records were skipped"
+msgstr ""
+
+#. translators: %s: number of records.
+#: includes/import-export/class-axellcore-admin.php:111
+#, php-format
+msgid "Failed to import %s record"
+msgstr ""
+
+#. translators: %s: number of records.
+#: includes/import-export/class-axellcore-admin.php:111
+#, php-format
+msgid "Failed to import %s records"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:112
+msgid "View import log"
+msgstr ""
+
+#. translators: %s: file name.
+#: includes/import-export/class-axellcore-admin.php:114
+#, php-format
+msgid "File uploaded: %s"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:115
+msgid "Row"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:116
+msgid "Reason for failure"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:117
+msgid "An error occurred. Please try again."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:165
+msgid "You do not have permission to access this page."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:213
+msgid "Upload CSV file"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:214
+msgid "Column mapping"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:216
+msgid "Done!"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:232
+msgid "Steps"
+msgstr ""
+
+#. translators: %s: post type label in lower case.
+#: includes/import-export/class-axellcore-admin.php:319
+#, php-format
+msgid "Import %s from a CSV file"
+msgstr ""
+
+#. translators: %s: post type label in lower case.
+#: includes/import-export/class-axellcore-admin.php:321
+#, php-format
+msgid "This tool allows you to import (or merge) %s data to your site from a CSV or TXT file."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:323
+msgid "Choose a CSV file from your computer:"
+msgstr ""
+
+#. translators: %s: maximum upload size, e.g. "8 MB".
+#: includes/import-export/class-axellcore-admin.php:326
+#, php-format
+msgid "Maximum size: %s"
+msgstr ""
+
+#. translators: %s: post type label in lower case.
+#: includes/import-export/class-axellcore-admin.php:330
+#, php-format
+msgid "Update existing %s"
+msgstr ""
+
+#. translators: %s: post type label in lower case.
+#: includes/import-export/class-axellcore-admin.php:333
+#, php-format
+msgid "Records of %s with an existing ID will be updated. IDs that do not exist will be skipped, and rows without an ID create new records."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:337
+msgid "Alternatively, enter the path to a CSV file on your server:"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:338
+msgid "CSV delimiter"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:339
+msgid "Use previous column mapping preferences?"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:340
+msgid "Character encoding of the file"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:340
+msgid "Autodetect"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:348
+msgid "Show advanced options"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:348
+msgid "Hide advanced options"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:349
+msgid "Continue"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:365
+#: includes/import-export/class-axellcore-admin.php:688
+#: includes/import-export/class-axellcore-admin.php:851
+msgid "You do not have permission to do that."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:384
+#: includes/import-export/class-axellcore-admin.php:402
+msgid "The file upload failed."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:396
+msgid "The file path provided is invalid. Use a file inside the uploads folder."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:407
+msgid "Invalid file type. The importer supports CSV and TXT file formats."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:412
+msgid "The file is empty or is not a valid text CSV."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:421
+msgid "The uploaded file could not be saved."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:488
+#: includes/import-export/class-axellcore-admin.php:705
+msgid "The uploaded file has expired. Please upload it again."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:507
+msgid "Back"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:513
+msgid "Invalid characters were found. The file encoding may be wrong; go back and choose another encoding."
+msgstr ""
+
+#. translators: %s: post type label in lower case.
+#: includes/import-export/class-axellcore-admin.php:534
+#, php-format
+msgid "Map CSV fields to %s"
+msgstr ""
+
+#. translators: %s: post type label in lower case.
+#: includes/import-export/class-axellcore-admin.php:536
+#, php-format
+msgid "Select fields from your CSV file to map against %s fields, or to ignore during import."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:541
+msgid "You mapped both the combined and the separate version of the same data. The separate columns (Country, State, City, Phone 1, Phone 2) take priority when they have a value; when they are empty, the combined column is used. Differences are shown in the log."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:542
+msgid "Column name"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:542
+msgid "Map to field"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:551
+msgid "Sample:"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:556
+msgid "Do not import"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:564
+msgid "Run the importer"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:568
+msgid "Importing"
+msgstr ""
+
+#. translators: %s: post type label in lower case.
+#: includes/import-export/class-axellcore-admin.php:570
+#, php-format
+msgid "Your %s data is now being imported..."
+msgstr ""
+
+#. translators: %s: post type label in lower case.
+#: includes/import-export/class-axellcore-admin.php:594
+#, php-format
+msgid "Export %s to a CSV file"
+msgstr ""
+
+#. translators: %s: post type label in lower case.
+#: includes/import-export/class-axellcore-admin.php:596
+#, php-format
+msgid "This tool allows you to generate and download a CSV file containing a list of all %s."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:608
+msgid "Which columns should be exported?"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:608
+msgid "Export all default columns"
+msgstr ""
+
+#. translators: %s: post type label in lower case.
+#: includes/import-export/class-axellcore-admin.php:615
+#, php-format
+msgid "Which countries of %s should be exported?"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:616
+msgid "Export all countries"
+msgstr ""
+
+#. translators: %s: post type label in lower case.
+#: includes/import-export/class-axellcore-admin.php:621
+#, php-format
+msgid "Which states of %s should be exported?"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:622
+msgid "Export all states"
+msgstr ""
+
+#. translators: %s: post type label in lower case.
+#: includes/import-export/class-axellcore-admin.php:627
+#, php-format
+msgid "Which cities of %s should be exported?"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:628
+msgid "Export all cities"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:652
+msgid "Generate CSV"
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:767
+msgid "The export has expired. Please start again."
+msgstr ""
+
+#: includes/import-export/class-axellcore-admin.php:857
+msgid "The export file is no longer available."
+msgstr ""
+
+#: includes/import-export/class-axellcore-importer.php:75
+msgid "The file is empty or uses a different encoding. Try another file or another encoding."
+msgstr ""
+
+#: includes/import-export/class-axellcore-importer.php:173
+msgid "The uploaded file could not be read."
+msgstr ""
+
+#: includes/import-export/class-axellcore-importer.php:178
+msgid "The uploaded file could not be opened."
+msgstr ""
+
+#. translators: %d: post ID from the CSV.
+#: includes/import-export/class-axellcore-importer.php:233
+#, php-format
+msgid "No record with ID %d."
+msgstr ""
+
+#. translators: %d: post ID from the CSV.
+#: includes/import-export/class-axellcore-importer.php:237
+#, php-format
+msgid "ID %d belongs to a different content type."
+msgstr ""
+
+#. translators: %d: post ID from the CSV.
+#: includes/import-export/class-axellcore-importer.php:241
+#, php-format
+msgid "ID %d already exists and updating is disabled."
+msgstr ""
+
+#. translators: %d: post ID from the CSV.
+#: includes/import-export/class-axellcore-importer.php:245
+#, php-format
+msgid "You do not have permission to edit ID %d."
+msgstr ""
+
+#: includes/import-export/class-axellcore-importer.php:250
+msgid "You do not have permission to create records."
+msgstr ""
+
+#: includes/import-export/class-axellcore-importer.php:253
+msgid "The name is required to create a record."
+msgstr ""
+
+#: includes/import-export/class-axellcore-importer.php:335
+msgid "There are more than two phone numbers in the Phone column."
+msgstr ""
+
+#. translators: 1: column name, 2: value in that column, 3: value in the Phone column.
+#: includes/import-export/class-axellcore-importer.php:353
+#, php-format
+msgid "%1$s in the CSV (%2$s) differs from the Phone column (%3$s); the %1$s column was used."
+msgstr ""
+
+#: includes/import-export/class-axellcore-importer.php:365
+msgid "Website has an invalid URL."
+msgstr ""
+
+#: includes/import-export/class-axellcore-importer.php:373
+msgid "Invalid email address."
+msgstr ""
+
+#. translators: 1: column name, 2: value in that column, 3: value in the Location column.
+#: includes/import-export/class-axellcore-importer.php:394
+#, php-format
+msgid "%1$s in the CSV (%2$s) differs from the Location column (%3$s); the %1$s column was used."
+msgstr ""
+
+#. translators: %s: location name from the CSV.
+#: includes/import-export/class-axellcore-importer.php:430
+#, php-format
+msgid "The location \"%s\" does not exist and cannot be created."
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:75
+msgid "Resellers"
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:85
+msgid "Service centers"
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:113
+msgid "ID"
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:117
+msgid "Name"
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:121
+msgid "Location"
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:125
+msgid "Country"
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:129
+msgid "State"
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:133
+msgid "City"
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:137
+msgid "Address"
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:141
+msgid "Phone"
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:145
+msgid "Phone 1"
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:149
+msgid "Phone 2"
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:153
+msgid "Website"
+msgstr ""
+
+#: includes/import-export/class-axellcore-store-config.php:157
+msgid "Email"
+msgstr ""
+
+#: includes/media.php:276
 msgid "CAD Files"
 msgstr ""
 
-#: includes/media.php:275
+#: includes/media.php:277
 msgid "Manage CAD Files"
 msgstr ""
 
 #. translators: %s: number of CAD files
-#: includes/media.php:277
+#: includes/media.php:279
 #, php-format
 msgid "CAD File <span class=\"count\">(%s)</span>"
 msgid_plural "CAD Files <span class=\"count\">(%s)</span>"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/post-ordering.php:71
+#: includes/post-ordering.php:79
 msgid "Sorting"
 msgstr ""

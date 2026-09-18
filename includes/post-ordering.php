@@ -4,6 +4,8 @@
  *
  * Based on the term-ordering implementation from WooCommerce, adapted from
  * the ninodem theme's post-ordering.php.
+ *
+ * @package Axellcore
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -26,8 +28,8 @@ function axell_post_types_ordering(): array {
 	return array_values( $post_types );
 }
 
-foreach ( axell_post_types_ordering() as $post_type ) {
-	add_filter( "views_edit-{$post_type}", 'axell_post_ordering_views' );
+foreach ( axell_post_types_ordering() as $axell_ordered_type ) {
+	add_filter( "views_edit-{$axell_ordered_type}", 'axell_post_ordering_views' );
 }
 
 /**
@@ -37,7 +39,7 @@ foreach ( axell_post_types_ordering() as $post_type ) {
  * In that state "Sorting" is marked current and "All" is unmarked so only one
  * entry appears active at a time.
  *
- * @param array<string,string> $views
+ * @param array<string,string> $views Post-status views keyed by slug.
  * @return array<string,string>
  */
 function axell_post_ordering_views( array $views ): array {
@@ -62,7 +64,13 @@ function axell_post_ordering_views( array $views ): array {
 	}
 
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$sorting_url = add_query_arg( array( 'orderby' => 'menu_order title', 'order' => 'ASC' ), remove_query_arg( array( 'orderby', 'order' ) ) );
+	$sorting_url = add_query_arg(
+		array(
+			'orderby' => 'menu_order title',
+			'order'   => 'ASC',
+		),
+		remove_query_arg( array( 'orderby', 'order' ) )
+	);
 
 	$views['axell_sorting'] = sprintf(
 		'<a href="%s"%s>%s</a>',
@@ -85,7 +93,7 @@ function axell_admin_post_ordering_script( string $hook ): void {
 	}
 
 	$post_types = axell_post_types_ordering();
-	$post_type  = isset( $_GET['post_type'] ) ? wp_unslash( $_GET['post_type'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$post_type  = isset( $_GET['post_type'] ) ? sanitize_key( wp_unslash( $_GET['post_type'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 	if ( empty( $post_type ) || ! in_array( $post_type, $post_types, true ) ) {
 		return;
@@ -97,12 +105,22 @@ function axell_admin_post_ordering_script( string $hook ): void {
 		return;
 	}
 
+	// Same capability the AJAX handler requires, so the sortable is never offered without it.
+	if ( ! current_user_can( 'edit_others_posts' ) ) {
+		return;
+	}
+
 	wp_enqueue_script(
 		'axellcore-post-ordering',
 		AXELLCORE_URL . 'assets/js/admin/post-ordering.js',
 		array( 'jquery-ui-sortable' ),
 		AXELLCORE_VERSION,
 		true
+	);
+	wp_localize_script(
+		'axellcore-post-ordering',
+		'axellcorePostOrdering',
+		array( 'nonce' => wp_create_nonce( 'axell-post-ordering' ) )
 	);
 }
 add_action( 'admin_enqueue_scripts', 'axell_admin_post_ordering_script' );
@@ -136,9 +154,10 @@ add_action( 'admin_enqueue_scripts', 'axell_admin_post_ordering_styles' );
  * AJAX handler: reorder the dragged post relative to its new neighbour.
  */
 function axell_post_ordering(): void {
-	// phpcs:disable WordPress.Security.NonceVerification.Missing
-	if ( ! current_user_can( 'edit_posts' ) || empty( $_POST['id'] ) ) {
-		wp_die( -1 );
+	check_ajax_referer( 'axell-post-ordering', 'security' );
+
+	if ( ! current_user_can( 'edit_others_posts' ) || empty( $_POST['id'] ) ) {
+		wp_die( '-1' );
 	}
 
 	$id      = absint( $_POST['id'] );
@@ -146,11 +165,15 @@ function axell_post_ordering(): void {
 	$post    = get_post( $id );
 
 	if ( ! $post ) {
-		wp_die( 0 );
+		wp_die( '0' );
+	}
+
+	// Only post types with ordering enabled may be reordered, whatever ID was posted.
+	if ( ! in_array( $post->post_type, axell_post_types_ordering(), true ) ) {
+		wp_die( '-1' );
 	}
 
 	axell_reorder_posts( $post, $next_id );
-	// phpcs:enable
 }
 add_action( 'wp_ajax_axell_post_ordering', 'axell_post_ordering' );
 
@@ -198,11 +221,11 @@ function axell_reorder_posts( \WP_Post $the_post, ?int $next_id, int $index = 0,
 		}
 
 		if ( null !== $next_id && $post_id === $next_id ) {
-			$index++;
+			++$index;
 			$index = axell_set_post_order( $post_type, $id, $index, true );
 		}
 
-		$index++;
+		++$index;
 		$index = axell_set_post_order( $post_type, $post_id, $index );
 	}
 
@@ -230,7 +253,7 @@ function axell_set_post_order( string $post_type, int $post_id, int $index, bool
 		)
 	);
 
-	clean_post_cache( $post_id, $post_type );
+	clean_post_cache( $post_id );
 
 	return $index;
 }
@@ -241,7 +264,7 @@ function axell_set_post_order( string $post_type, int $post_id, int $index, bool
  * Only applies when no explicit `orderby` is set, so manual column sorting
  * still works.
  *
- * @param \WP_Query $query
+ * @param \WP_Query $query The query being prepared.
  */
 function axell_get_posts_ordering( \WP_Query $query ): void {
 	$post_types = axell_post_types_ordering();

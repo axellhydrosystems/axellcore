@@ -2,6 +2,7 @@
 /// <reference types="jqueryui" />
 
 declare const ajaxurl: string;
+declare const axellcorePostOrdering: { nonce: string };
 
 jQuery( function ( $ ) {
 	const tableSelector  = 'table.wp-list-table';
@@ -74,9 +75,10 @@ jQuery( function ( $ ) {
 			$.post(
 				ajaxurl,
 				{
-					action: 'axell_post_ordering',
-					id:     postid,
-					nextid: nextpostid,
+					action:   'axell_post_ordering',
+					security: axellcorePostOrdering.nonce,
+					id:       postid,
+					nextid:   nextpostid,
 				},
 				function ( response: string ): void {
 					if ( response === 'children' ) {

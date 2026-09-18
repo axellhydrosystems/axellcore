@@ -1,6 +1,8 @@
 <?php
 /**
  * DB update infrastructure and data migrations.
+ *
+ * @package Axellcore
  */
 
 defined( 'ABSPATH' ) || exit;

@@ -2,9 +2,9 @@
 Contributors: axellhydrosystems
 Tags: axell, hydrosystems, core
 Requires at least: 6.4
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.3.1
+Stable tag: 0.4.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Core functionality for Axell Hydrosystems.
 Core functionality for Axell Hydrosystems WordPress sites.
 
 == Changelog ==
+
+= 0.4.0 =
+* Add CSV export and import for the resellers (revendas) and service centers (assistencia) post types, with column mapping, batch processing, delimiter and encoding options.
+* Location column (Country > State > City) and combined phone column, with optional separate columns; records are matched by ID for create or update.
+* Secure the post ordering AJAX handler: nonce and edit_others_posts are now required, and only post types with ordering enabled are accepted.
+* Add English source strings, the POT file and pt_BR translations for the new screens.
 
 = 0.3.1 =
 * Fix Sorting link preserving active filters (e.g. Published, Draft) when switching to sorting mode.

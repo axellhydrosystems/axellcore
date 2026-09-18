@@ -28,3 +28,5 @@ tsconfig.json         export-ignore
 post-ordering-prompt.md export-ignore
 assets/**/*.ts        export-ignore
 assets/**/*.scss      export-ignore
+.claude/               export-ignore
+**/.DS_Store          export-ignore

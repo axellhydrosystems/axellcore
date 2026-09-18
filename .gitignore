@@ -11,3 +11,4 @@ test-results/
 *.skp
 assets/**/*.js
 assets/**/*.css
+.phpunit.result.cache

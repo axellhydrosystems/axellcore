@@ -1,6 +1,8 @@
 <?php
 /**
  * CAD media: MIME types, upload validation, and media library integration.
+ *
+ * @package Axellcore
  */
 
 defined( 'ABSPATH' ) || exit;

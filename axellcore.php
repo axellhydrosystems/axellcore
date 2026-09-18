@@ -4,10 +4,10 @@
  *
  * @package           Axellcore
  * Description:       Core functionality for Axell Hydrosystems.
- * Version:           0.3.1
+ * Version:           0.4.0
  * Requires at least: 6.4
  * Requires PHP:      8.1
- * Tested up to:      7.0
+ * Tested up to:      7.1
  * Author:            Axell Hydrosystems
  * Author URI:        https://github.com/axellhydrosystems
  * License:           GPL-2.0-or-later
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AXELLCORE_VERSION', '0.3.1' );
+define( 'AXELLCORE_VERSION', '0.4.0' );
 define( 'AXELLCORE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'AXELLCORE_URL', plugin_dir_url( __FILE__ ) );
 
@@ -36,6 +36,15 @@ add_filter(
 );
 
 require_once AXELLCORE_PATH . 'includes/post-ordering.php';
+
+if ( is_admin() ) {
+	require_once AXELLCORE_PATH . 'includes/import-export/class-axellcore-fields.php';
+	require_once AXELLCORE_PATH . 'includes/import-export/class-axellcore-store-config.php';
+	require_once AXELLCORE_PATH . 'includes/import-export/class-axellcore-exporter.php';
+	require_once AXELLCORE_PATH . 'includes/import-export/class-axellcore-importer.php';
+	require_once AXELLCORE_PATH . 'includes/import-export/class-axellcore-admin.php';
+	Axellcore_Admin::init();
+}
 
 // SelfDirectory provides self-hosted update checking via GitHub Releases.
 // It is bundled as a git submodule and optional — the plugin works fully
